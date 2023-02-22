@@ -1,0 +1,40 @@
+version: '3.8'  # specify the version of docker-compose syntax to use
+
+services:
+  postgis:  # define a service for the PostGIS container
+    image: postgis/postgis:15-3.3-alpine  # use the PostGIS image from Docker Hub
+    container_name: postgis  # specify the name of the container
+    environment:  # set environment variables for the container
+      POSTGRES_PASSWORD: mysecretpassword  # set the password for the default Postgres user
+      POSTGRES_DB: tutorial # default database to create on the first startup
+    volumes:  # mount a volume to persist the Postgres data
+      - pgdata:/var/lib/postgresql/data
+    ports:  # expose the container's port for incoming connections
+      - "25432:5432"
+    networks:  # connect the container to a named network
+      - app-network
+
+  pgadmin:  # define a service for the PgAdmin container
+    image: dpage/pgadmin4:6.20  # use the PgAdmin image from Docker Hub
+    container_name: pgadmin4  # specify the name of the container
+    environment:  # set environment variables for the container
+      PGADMIN_DEFAULT_EMAIL: admin@example.com  # set the email for the default PgAdmin user
+      PGADMIN_DEFAULT_PASSWORD: mysecretpassword  # set the password for the default PgAdmin user
+    volumes:  # mount a volume to persist the PgAdmin data
+      - pgadmindata:/var/lib/pgadmin
+    ports:  # expose the container's port for incoming connections
+      - "5050:80"
+    depends_on:  # specify that the PgAdmin container depends on the PostGIS container
+      - postgis
+    links:  # create a network link between the PgAdmin and PostGIS containers
+      - postgis
+    networks:  # connect the container to a named network
+      - app-network
+
+networks:
+  app-network:  # define a named bridge network for the containers to connect to
+    driver: bridge
+
+volumes:
+  pgdata:  # define a named volume for the Postgres data
+  pgadmindata:  # define a named volume for the PgAdmin data
