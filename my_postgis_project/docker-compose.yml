@@ -23,17 +23,17 @@ services:
     # define a service for the PgAdmin container
     image: dpage/pgadmin4:6.20 # use the PgAdmin image from Docker Hub
     container_name: pgadmin4 # specify the name of the container
-    entrypoint: ["/bin/sh","-c"]
-    command: 
-    - |
-      cp /var/nyc_data.backup /var/lib/pgadmin/storage/admin_example.com/nyc_data.backup
-      /entrypoint.sh
+    entrypoint: [ "/bin/sh", "-c" ]
+    command:
+      - |
+        cp /var/nyc_data.backup /var/lib/pgadmin/storage/admin_example.com/nyc_data.backup
+        /entrypoint.sh
     environment:
       # set environment variables for the container
       PGADMIN_DEFAULT_EMAIL: admin@example.com # set the email for the default PgAdmin user
       PGADMIN_DEFAULT_PASSWORD: mysecretpassword # set the password for the default PgAdmin user
     volumes:
-        # mount a volume to persist the PgAdmin data
+      # mount a volume to persist the PgAdmin data
       - ./backups/nyc_data.backup:/var/nyc_data.backup
       - pgadmindata:/var/lib/pgadmin
     ports:
@@ -48,6 +48,34 @@ services:
     networks:
       # connect the container to a named network
       - app-network
+  pg_featureserv:
+    container_name: pg_featureserv
+    image: pramsey/pg_featureserv
+    environment:
+      - DATABASE_URL=postgres://postgres:mysecretpassword@postgis/nyc
+    ports:
+      - 9000:9000
+    depends_on:
+      - postgis
+    networks:
+      # connect the container to a named network
+      - app-network
+
+  geoserver:
+    image: kartoza/geoserver:2.22.0
+    container_name: mapsaudi-geoserver
+    ports:
+      - "5005:8080"
+    restart: always
+    depends_on:
+      - postgis
+    env_file:
+      - .env-geoserver
+    volumes:
+      - geoserver_data:/opt/geoserver/data_dir
+      - settings:/settings
+    networks:
+      - app-network
 
 networks:
   app-network:
@@ -57,3 +85,5 @@ networks:
 volumes:
   pgdata: # define a named volume for the Postgres data
   pgadmindata: # define a named volume for the PgAdmin data
+  settings:
+  geoserver_data:
